@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Per-client integrations to synchronize products, stock, and pricing between a global distributor and partner APIs — with observable flows non-technical teams could inspect without touching code." />
+    <title>B2B Product Sync Platform | Nicolas Machado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-BpmAP-QB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DvrF8vwT.css">
+      <link rel="canonical" href="https://nicolasmachado.dev/work/b2b-product-sync-platform" />
+      <meta property="og:title" content="B2B Product Sync Platform | Nicolas Machado" />
+    <meta property="og:description" content="Per-client integrations to synchronize products, stock, and pricing between a global distributor and partner APIs — with observable flows non-technical teams could inspect without touching code." />
+    <meta property="og:url" content="https://nicolasmachado.dev/work/b2b-product-sync-platform" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="B2B Product Sync Platform | Nicolas Machado" />
+    <meta name="twitter:description" content="Per-client integrations to synchronize products, stock, and pricing between a global distributor and partner APIs — with observable flows non-technical teams could inspect without touching code." />
+  </head>
+  <body>
+    <div id="root"><article class="section section--low project-detail">
+  <div class="container">
+    <header class="project-detail__header">
+      <p class="eyebrow">Projects in Production</p>
+      <h1 class="project-detail__title">B2B Product Sync Platform</h1>
+      <p class="project-detail__role">Integration Engineer — API Orchestration, Data Mapping &amp; Azure Cloud</p>
+      <div class="production-card__tags"><span class="production-card__tag">Azure Logic Apps</span><span class="production-card__tag">Azure Functions</span><span class="production-card__tag">Node.js</span><span class="production-card__tag">SQL Server</span><span class="production-card__tag">REST</span><span class="production-card__tag">SOAP</span></div>
+    </header>
+    <div class="project-detail__body"><section class="project-detail__section">
+  <h2>The Problem</h2>
+  <p>A global distributor exposed APIs to its partners under specific contracts. Each partner, in turn, had its own API with a different contract, authentication model, and protocol — some REST, some SOAP.</p><p>The platform needed per-client integrations to keep the website catalog in sync: product creation, stock levels, and pricing. The challenge was not a single integration, but ten distinct partner setups with different auth flows, field formats, and sync triggers — all while giving operations visibility into what succeeded, what failed, and why.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Integration Architecture</h2>
+  <p>I designed and built the integration layer on Azure using a Logic Apps + Functions pattern:</p><p>Logic Apps — orchestrated each integration flow: scheduled runs (cron, twice daily), event-driven triggers (HTTP requests), step sequencing, and the overall structure partners could open and evaluate without reading application code.</p><p>Azure Functions (Node.js) — handled API calls between the distributor and each partner: authenticating against heterogeneous auth schemes, calling REST and SOAP endpoints, and transforming fields between incompatible contracts.</p><p>Product, stock, and pricing ran as separate integration flows. Pricing, for example, depended on the distributor's own price-publication cycle and could not share the same trigger or pipeline as catalog or inventory updates.</p><p>Most clients reused a shared Logic App template with per-partner variations; a few required fully dedicated flows where the contract diverged enough to justify a separate app.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>API Design &amp; Partner Onboarding</h2>
+  <p>I adjusted and defined the distributor's integration-facing APIs, documenting contracts in Swagger so partner onboarding had a clear, versioned reference.</p><p>Each of the ten partner integrations required its own auth configuration, field mapping rules, and trigger setup — scheduled syncs, event-driven updates, or both depending on the partner's operational model.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Observability &amp; Traceability</h2>
+  <p>I added structured logging and audit storage in SQL Server: execution logs, product state snapshots, error records, and audit trails.</p><p>On failure, the system persisted an error summary plus the Logic App run ID so anyone could jump from the database record to the exact execution in Azure and diagnose the issue. This replaced silent failures that the previous setup did not catch.</p><p>Email alerts notified the team when a sync failed; retries were handled manually after review, keeping control over re-processing edge cases across heterogeneous partner APIs.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Tech Stack</h2>
+  <p>Node.js · Azure Logic Apps · Azure Functions · SQL Server · REST · SOAP · Swagger · Cron &amp; HTTP triggers</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Impact</h2>
+  <p>Ten production partner integrations covering product, stock, and pricing sync across a B2B catalog.</p><p>Full traceability of successful updates and failures, with execution IDs linked back to Logic App runs.</p><p>Eliminated silent sync errors and gave non-technical staff direct visibility into integration flows — increasing operational confidence without depending on developers for routine checks.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Architecture</h2>
+  
+  <pre class="project-detail__diagram">flowchart TB
+    subgraph triggers[&quot;Sync triggers&quot;]
+        direction TB
+        CRON[Cron - 2x daily]
+        HTTP[HTTP - event-driven]
+    end
+
+    subgraph orchestration[&quot;Per-partner orchestration&quot;]
+        direction TB
+        LA[Azure Logic App
+ template or dedicated]
+        CRON --&gt; LA
+        HTTP --&gt; LA
+    end
+
+    subgraph compute[&quot;Integration compute&quot;]
+        direction TB
+        FN[Azure Functions - Node.js]
+        LA --&gt; FN
+    end
+
+    subgraph apis[&quot;External APIs&quot;]
+        direction TB
+        DIST[Distributor API
+ REST - Swagger]
+        P1[Partner API
+ REST or SOAP]
+        FN --&gt; DIST
+        FN --&gt; P1
+    end
+
+    subgraph flows[&quot;Separate integration flows&quot;]
+        direction LR
+        PROD[Products]
+        STOCK[Stock]
+        PRICE[Pricing]
+    end
+
+    LA -.-&gt; PROD
+    LA -.-&gt; STOCK
+    LA -.-&gt; PRICE
+
+    subgraph observability[&quot;Observability&quot;]
+        direction TB
+        SQL[(SQL Server
+ logs, audit, errors, state)]
+        EMAIL[Email alerts on failure]
+        FN --&gt; SQL
+        LA --&gt; SQL
+        SQL --&gt; EMAIL
+    end</pre>
+  
+</section></div>
+    <p class="project-detail__disclaimer">
+      Client and product names omitted for confidentiality. Descriptions reflect my role and
+      technical contributions.
+    </p>
+  </div>
+</article></div>
+  </body>
+</html>

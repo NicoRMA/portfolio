@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Automated a clinical workflow based on facial images: region detection, geometrically consistent treatment planning, and a final 3D mesh for the application." />
+    <title>Wrinkle Detection &amp; Treatment | Nicolas Machado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-BpmAP-QB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DvrF8vwT.css">
+      <link rel="canonical" href="https://nicolasmachado.dev/work/wrinkle-detection-treatment" />
+      <meta property="og:title" content="Wrinkle Detection &amp; Treatment | Nicolas Machado" />
+    <meta property="og:description" content="Automated a clinical workflow based on facial images: region detection, geometrically consistent treatment planning, and a final 3D mesh for the application." />
+    <meta property="og:url" content="https://nicolasmachado.dev/work/wrinkle-detection-treatment" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Wrinkle Detection &amp; Treatment | Nicolas Machado" />
+    <meta name="twitter:description" content="Automated a clinical workflow based on facial images: region detection, geometrically consistent treatment planning, and a final 3D mesh for the application." />
+  </head>
+  <body>
+    <div id="root"><article class="section section--low project-detail">
+  <div class="container">
+    <header class="project-detail__header">
+      <p class="eyebrow">Projects in Production</p>
+      <h1 class="project-detail__title">Wrinkle Detection &amp; Treatment</h1>
+      <p class="project-detail__role">ML Engineer — Computer Vision, 3D Geometry, Training &amp; Cloud Infrastructure (IaC/CI)</p>
+      <div class="production-card__tags"><span class="production-card__tag">Python</span><span class="production-card__tag">YOLO</span><span class="production-card__tag">Vertex AI</span><span class="production-card__tag">Terraform</span><span class="production-card__tag">Cloud Run</span><span class="production-card__tag">Blender</span><span class="production-card__tag">Firestore</span></div>
+    </header>
+    <div class="project-detail__body"><section class="project-detail__section">
+  <h2>The Problem</h2>
+  <p>The platform needed to automate a clinical workflow based on facial images: detect regions of interest, generate a geometrically consistent treatment plan, and produce a final 3D mesh consumable by the application.</p><p>The challenge was not just model inference, but coordinating multiple asynchronous stages with medical review between steps, ensuring only clinically approved data feeds training, moving from 2D detections to 3D geometry with safety constraints, and maintaining traceability per patient, environment (dev/prod), and execution.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Cloud Job Pipeline</h2>
+  <p>I designed and implemented three independent jobs deployed as Cloud Run Jobs, coordinated via Firestore and Cloud Storage:</p><p>Detection — YOLO inference: wrinkle segmentation, eyebrow detection (rest/raised), and periocular detection.</p><p>Treatment — consumes reviewed detection + patient 3D mesh; computes safe geometry, application points, and geodesic overlays.</p><p>Mesh Builder — takes the approved plan and generates the final 3D mesh (Blender pipeline) for the application.</p><p>The flow includes clinical review pauses: each stage writes its result, a physician approves or corrects, and only then does the next stage proceed. Manually edited cases are kept as improvement signals for future training cycles.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Model Training Cycle</h2>
+  <p>I built and ran the end-to-end ML cycle: data preparation, GPU training, and weight deployment to production.</p><p>Internal dashboard (Streamlit) with two pipelines: YOLO (extracts clinically approved data, generates labels, visual train/val review) and Gemini FWS (JSONL examples for fine-tuning on Vertex AI). Tasks: forehead wrinkle segmentation, crow's feet, and eyebrow detection.</p><p>I trained three YOLO models on Vertex AI Custom Jobs: wrinkles (YOLO26s-seg, segmentation), crow's feet (YOLO26s, detection), and eyebrows (YOLO26m, detection). Flow: export dataset → publish to GCS → Cloud Build → Vertex Custom Job → val evaluation → deploy to detection job.</p><p>I also implemented the Gemini fine-tuning pipeline for the facial zones module (FWS), with a dedicated builder and review dashboard.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>3D Validation, IaC &amp; CI/CD</h2>
+  <p>I added structural validation for facial meshes (topological integrity, UVs, degenerate components) to catch invalid assets before they break the treatment pipeline.</p><p>GCP infrastructure as code with Terraform (multi-environment dev/prod): Cloud Run Jobs, Artifact Registry, service accounts, Google Cloud Workflows, and IAM. GitHub Actions with Workload Identity Federation for selective per-job build and deploy, with no long-lived JSON keys in the repo.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Tech Stack</h2>
+  <p>Python · Docker · Terraform · GitHub Actions · Cloud Build · Google Cloud Run Jobs · Google Cloud Workflows · Workload Identity Federation · Firestore · Cloud Storage · Vertex AI · YOLO/Ultralytics · Streamlit · Blender (bpy) · trimesh · 3D geometry / geodesics</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Impact</h2>
+  <p>Production-ready end-to-end vision + geometry pipeline, with a reproducible training cycle and clinical quality control.</p><p>Three trained and versioned YOLO models with traceable artifacts in GCS, Gemini fine-tuning pipeline for facial zones, infrastructure versioned in Terraform, and automated deployments with GitHub Actions.</p><p>Reduced risk through mesh validation and medical approval gates between stages.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Architecture</h2>
+  
+  <pre class="project-detail__diagram">flowchart TB
+    subgraph clinical[&quot;Clinical flow&quot;]
+        direction TB
+        A[Image capture - App]
+        B[Job 1: CV Detection - YOLO]
+        C[(Firestore: detections)]
+        D{Clinical review}
+        E[Job 2: Treatment - CV + 3D]
+        F[(Firestore: treatments)]
+        G{Clinical review}
+        H[Job 3: Mesh Builder - Blender]
+        I[(GCS + Firestore: mesh)]
+        J[App consumes 3D mesh]
+        A --&gt; B --&gt; C --&gt; D --&gt; E --&gt; F --&gt; G --&gt; H --&gt; I --&gt; J
+    end
+
+    J -.-&gt; K
+
+    subgraph ml[&quot;Episodic ML cycle&quot;]
+        direction TB
+        K[Clinically approved data]
+        L[Streamlit dashboard]
+        M[YOLO / Gemini dataset]
+        N[Vertex AI Custom Job]
+        O[Deploy to detection job]
+        K --&gt; L --&gt; M --&gt; N --&gt; O
+    end
+
+    O -.-&gt; P
+
+    subgraph cicd[&quot;CI/CD&quot;]
+        direction TB
+        P[GitHub Actions]
+        Q[Cloud Build - image]
+        R[Cloud Run Job updated]
+        P --&gt; Q --&gt; R
+    end
+
+    R -.-&gt; S
+
+    subgraph infra[&quot;Base infrastructure&quot;]
+        direction TB
+        S[Terraform - jobs, registries, workflows, IAM]
+    end</pre>
+  
+</section></div>
+    <p class="project-detail__disclaimer">
+      Client and product names omitted for confidentiality. Descriptions reflect my role and
+      technical contributions.
+    </p>
+  </div>
+</article></div>
+  </body>
+</html>

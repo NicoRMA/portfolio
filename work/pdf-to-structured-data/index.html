@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Built a production RAG pipeline that extracted structured answers from tens of thousands of legal PDFs — parallel asyncio stages, ephemeral vectorstores, and Azure Batch inference at scale." />
+    <title>Turning 30,000 PDFs into Structured Data | Nicolas Machado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-BpmAP-QB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DvrF8vwT.css">
+      <link rel="canonical" href="https://nicolasmachado.dev/work/pdf-to-structured-data" />
+      <meta property="og:title" content="Turning 30,000 PDFs into Structured Data | Nicolas Machado" />
+    <meta property="og:description" content="Built a production RAG pipeline that extracted structured answers from tens of thousands of legal PDFs — parallel asyncio stages, ephemeral vectorstores, and Azure Batch inference at scale." />
+    <meta property="og:url" content="https://nicolasmachado.dev/work/pdf-to-structured-data" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Turning 30,000 PDFs into Structured Data | Nicolas Machado" />
+    <meta name="twitter:description" content="Built a production RAG pipeline that extracted structured answers from tens of thousands of legal PDFs — parallel asyncio stages, ephemeral vectorstores, and Azure Batch inference at scale." />
+  </head>
+  <body>
+    <div id="root"><article class="section section--low project-detail">
+  <div class="container">
+    <header class="project-detail__header">
+      <p class="eyebrow">Projects in Production</p>
+      <h1 class="project-detail__title">Turning 30,000 PDFs into Structured Data</h1>
+      <p class="project-detail__role">Backend / AI Engineer — RAG Pipelines, Batch Inference &amp; Azure OpenAI</p>
+      <div class="production-card__tags"><span class="production-card__tag">Python</span><span class="production-card__tag">RAG</span><span class="production-card__tag">Azure OpenAI</span><span class="production-card__tag">Azure Batch</span><span class="production-card__tag">ChromaDB</span><span class="production-card__tag">asyncio</span></div>
+    </header>
+    <div class="project-detail__body"><section class="project-detail__section">
+  <h2>The Problem</h2>
+  <p>A legal team needed to analyze tens of thousands of long technical PDF reports and extract a fixed set of structured answers per document — factual identifiers, technical conclusions, names, and evaluations.</p><p>Manual review did not scale: each document required answers to 16 predefined questions, and with 30,000+ files the total workload exceeded 480,000 extractions. Synchronous LLM calls (document × question) were not viable in time or cost. Runs lasted hours or days and needed resumption, partial results, and operational monitoring.</p><p>The goal was not a chatbot, but a production pipeline that turned PDFs into a structured CSV with high accuracy and fault tolerance.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Pipeline Architecture</h2>
+  <p>I designed and implemented a producer–consumer system with three concurrent asyncio tasks communicating through queues — ingestion, inference preparation, and result monitoring all advance in parallel rather than in a single blocking thread.</p><p>Producer — groups PDFs into batches of 50, extracts text in parallel (PyMuPDF + ProcessPoolExecutor), chunks text (1,000 chars, 200 overlap), generates embeddings via Azure OpenAI, and stores them in an ephemeral ChromaDB index per batch.</p><p>Consumer — for each document and each of the 16 questions: semantic retrieval (top 100 chunks, filtered by document), CrossEncoder re-ranking (top 5), prompt assembly, and packaging into Azure Batch jobs (up to 10,000 requests per job). Each request carries a self-contained custom_id (document|question) so out-of-order results can be reconstructed.</p><p>Monitor/Writer — polls Azure Batch every 60s, downloads completed JSONL results, buffers rows, writes partial CSVs every 1,000 rows, and deletes the batch vectorstore only when all associated jobs finish.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Retrieval &amp; Batch Inference</h2>
+  <p>Vector search alone was fast but imprecise on specialized legal text. I implemented two-stage retrieval: embedding search over the ephemeral index, then CrossEncoder re-ranking to improve context quality sent to the LLM.</p><p>Instead of synchronous API calls across hundreds of thousands of inferences, I integrated Azure Batch API for async mass inference with a 24-hour completion window — the Consumer submits jobs and moves on without blocking the pipeline.</p><p>Ephemeral vectorstores per batch (~6k vectors each) replaced a monolithic index that would have reached ~1.8M vectors at scale — keeping memory constant, search fast, and failure scope limited to a single batch.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Resilience &amp; Operations</h2>
+  <p>Runs could last days, so I built recovery into the core design: on startup the orchestrator detects previous partial CSVs, skips already-processed documents, and resumes from where the run stopped.</p><p>Partial CSVs every 1,000 rows, webhook alerts every 30 minutes with progress, ETA, and disk usage, stuck-job detection after 6 hours, and emergency stop via config file.</p><p>When all tasks complete, an offline consolidation step merges partial CSVs into a single output — one row per document, one column per question.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Tech Stack</h2>
+  <p>Python · asyncio · ChromaDB · Azure OpenAI · Azure Batch API · Sentence Transformers · PyMuPDF · LangChain · pandas · Docker</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Impact</h2>
+  <p>Production pipeline processing 30,000+ legal PDFs into a consolidated structured CSV — one row per document, one column per extraction question.</p><p>Made 480,000+ LLM extractions feasible through batch inference, parallel asyncio stages, and ephemeral indexing instead of a single monolithic vector store.</p><p>Fault-tolerant by design: resumable runs, partial outputs, operational monitoring, and automatic cleanup — suitable for multi-day batch jobs without silent data loss.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Architecture</h2>
+  
+  <pre class="project-detail__diagram">flowchart TB
+    subgraph input[&quot;Input&quot;]
+        PDFs[&quot;PDFs in input directory&quot;]
+        Q[&quot;Fixed question catalog - 16 questions&quot;]
+    end
+
+    subgraph producer[&quot;Task 1 - Producer&quot;]
+        P1[&quot;Group PDFs in batches of 50&quot;]
+        P2[&quot;Extract text in parallel&quot;]
+        P3[&quot;Chunk and embed&quot;]
+        P4[&quot;Store in ephemeral ChromaDB&quot;]
+    end
+
+    subgraph consumer[&quot;Task 2 - Consumer&quot;]
+        C1[&quot;Per document and question: retrieval&quot;]
+        C2[&quot;CrossEncoder re-ranking&quot;]
+        C3[&quot;Build prompt with top-5 chunks&quot;]
+        C4[&quot;Submit batches to Azure Batch API&quot;]
+    end
+
+    subgraph monitor[&quot;Task 3 - Monitor/Writer&quot;]
+        M1[&quot;Poll status every 60s&quot;]
+        M2[&quot;Download JSONL results&quot;]
+        M3[&quot;Parse and buffer rows&quot;]
+        M4[&quot;Write partial CSV every 1000 rows&quot;]
+        M5[&quot;Clean up batch vectorstore&quot;]
+    end
+
+    subgraph output[&quot;Output&quot;]
+        CSV[&quot;Partial CSVs&quot;]
+        FINAL[&quot;Consolidated CSV&quot;]
+    end
+
+    PDFs --&gt; P1 --&gt; P2 --&gt; P3 --&gt; P4
+    P4 --&gt;|&quot;ingest queue&quot;| C1
+    Q --&gt; C1 --&gt; C2 --&gt; C3 --&gt; C4
+    C4 --&gt;|&quot;job queue&quot;| M1 --&gt; M2 --&gt; M3 --&gt; M4 --&gt; M5
+    M4 --&gt; CSV --&gt; FINAL</pre>
+  
+</section></div>
+    <p class="project-detail__disclaimer">
+      Client and product names omitted for confidentiality. Descriptions reflect my role and
+      technical contributions.
+    </p>
+  </div>
+</article></div>
+  </body>
+</html>
