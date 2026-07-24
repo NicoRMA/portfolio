@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Designed and built an internal base template so new projects start with standardized structure, containerized services, and reproducible local/dev/prod environments — adopted as the company standard across multiple developments." />
+    <title>Standardized Docker Project Template | Nicolas Machado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-C1O5crWS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-WDtTAKxs.css">
+      <link rel="canonical" href="https://nicolasmachado.dev/work/docker-project-template" />
+      <meta property="og:title" content="Standardized Docker Project Template | Nicolas Machado" />
+    <meta property="og:description" content="Designed and built an internal base template so new projects start with standardized structure, containerized services, and reproducible local/dev/prod environments — adopted as the company standard across multiple developments." />
+    <meta property="og:url" content="https://nicolasmachado.dev/work/docker-project-template" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Standardized Docker Project Template | Nicolas Machado" />
+    <meta name="twitter:description" content="Designed and built an internal base template so new projects start with standardized structure, containerized services, and reproducible local/dev/prod environments — adopted as the company standard across multiple developments." />
+  </head>
+  <body>
+    <div id="root"><article class="section section--low project-detail">
+  <div class="container">
+    <header class="project-detail__header">
+      <p class="eyebrow">Projects in Production</p>
+      <h1 class="project-detail__title">Standardized Docker Project Template</h1>
+      <p class="project-detail__role">Software Architect — Docker, DevOps &amp; Reproducible Environments</p>
+      <div class="production-card__tags"><span class="production-card__tag">Docker</span><span class="production-card__tag">Docker Compose</span><span class="production-card__tag">Makefile</span><span class="production-card__tag">Node.js</span><span class="production-card__tag">React</span><span class="production-card__tag">Apache</span><span class="production-card__tag">PostgreSQL</span><span class="production-card__tag">Docker Swarm</span></div>
+    </header>
+    <div class="project-detail__body"><section class="project-detail__section">
+  <h2>The Problem</h2>
+  <p>Every time the company started a new project from scratch, teams relied on manual setup without a shared baseline or service orchestration. Dependency versions, operating systems, local configs, and installed tools diverged between developers.</p><p>That inconsistency produced hard-to-diagnose environment errors and wasted days at the start of each project — sometimes several days per developer just to get the application running locally. Effort went into configuration instead of business features.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Template Design</h2>
+  <p>I designed and built a reusable Docker-based template with a predefined project structure, standardized configuration, and fully reproducible environments via containers.</p><p>A Makefile drives local, development, and production workflows (`make local`, `make dev`, `make prod`) on top of layered Docker Compose files and per-environment env files. New projects inherit the same service layout, build patterns, and operational commands from day one.</p><p>Core services ship out of the box: React/Vite frontend, Node.js backend, PostgreSQL database, and an Apache reverse proxy with SSL and vhost configuration. Optional stacks extend the same base to Docker Swarm deployments and a monitoring layer (Prometheus, Promtail).</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Multi-Environment Workflow</h2>
+  <p>Each environment uses dedicated Compose overlays and Dockerfiles (local with hot-reload volumes, dev/prod with production-oriented images) so behavior stays predictable from a developer laptop to deployed infrastructure.</p><p>Proxy configuration, certificate generation, and vhost setup are scripted and documented — reducing one-off Apache/SSL work on every new project.</p><p>The template also supports pulling upstream updates from the base repository, so improvements to the standard can propagate to derivative projects without rebuilding everything manually.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Tech Stack</h2>
+  <p>Docker · Docker Compose · Docker Swarm · Makefile · Node.js · React · Vite · PostgreSQL · Apache (reverse proxy, SSL, ModSecurity) · Prometheus · Promtail</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Impact</h2>
+  <p>Adopted as the internal standard for starting new developments and currently used across multiple company projects.</p><p>Unified technical criteria, consistent developer experience, and faster project kickoff — teams focus on business logic instead of fighting local setup.</p><p>Reduced developer onboarding time, improved team productivity, and increased environment reliability across the full development cycle.</p>
+  
+  
+</section><section class="project-detail__section">
+  <h2>Architecture</h2>
+  
+  <pre class="project-detail__diagram">flowchart TB
+    subgraph dev[&quot;Developer workflow&quot;]
+        MK[Makefile
+ local / dev / prod]
+        ENV[env_files
+ .env.local / .dev / .prod]
+        MK --&gt; ENV
+    end
+
+    subgraph compose[&quot;Docker Compose layers&quot;]
+        BASE[docker-compose.base.yaml]
+        OVERLAY[Environment overlay
+ local / dev / prod]
+        BASE --&gt; OVERLAY
+    end
+
+    ENV --&gt; OVERLAY
+
+    subgraph services[&quot;Core services&quot;]
+        FE[Frontend - React/Vite]
+        BE[Backend - Node.js]
+        DB[(PostgreSQL)]
+        PX[Apache Proxy
+ SSL + vhosts]
+    end
+
+    OVERLAY --&gt; FE
+    OVERLAY --&gt; BE
+    OVERLAY --&gt; DB
+    OVERLAY --&gt; PX
+
+    PX --&gt; FE
+    PX --&gt; BE
+    BE --&gt; DB
+
+    subgraph optional[&quot;Optional extensions&quot;]
+        SW[Docker Swarm stacks]
+        MON[Monitoring
+ Prometheus + Promtail]
+    end
+
+    OVERLAY -.-&gt; SW
+    OVERLAY -.-&gt; MON</pre>
+  
+</section></div>
+    <p class="project-detail__disclaimer">
+      Client and product names omitted for confidentiality. Descriptions reflect my role and
+      technical contributions.
+    </p>
+  </div>
+</article></div>
+  </body>
+</html>
