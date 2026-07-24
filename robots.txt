@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nicolasmachado.dev/sitemap.xml
+Sitemap: https://nicorma.github.io/portfolio/sitemap.xml
